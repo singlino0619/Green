@@ -252,3 +252,73 @@ CDSは参照債券のデフォルト時の保険に用いられるだけでな�
   - CVAデスクは損失を被る
 
 ### 4.6.2 Mapping to Baskets and Indices
+#### mappingの方法の一つ
+#### Markit社が提供しているCDS indicesにmapする
+- 様々な地域のindexをカバーしている
+
+#### 方法
+- single indexをそのままmapする
+- single indexに重みをつけていくつか足し合わせたものをmapする
+
+#### 注意点
+- このようにして作成されたcurveは人工的であって，作り手の気持ちが入る．
+- したがって，illiquid counterpartyのriskを反映したものでは決してないということは注意点．
+
+#### Markitが提供しているもの
+- 12のindustoryにそれぞれのratingを割り当てたCDS spreads
+- 現在地域の内訳はない
+##### 利点
+- 豊富なindexをそろえていること
+##### 欠点
+- ratingとindustoryの分類の数が，ほとんどの銀行が分類している数よりも多くなってしまっている
+- markit社のCDSを使うには，もう一段階銀行内部でmappingし直さないといけない
+- ratingに関して：すでに銀行内部では，内部格付けと外部格付けのmappingのlogicをもっているはずなので，
+markitのより細かいratingは内部格付けの補間を含めたものといえる
+- sectorに関して：内部のindustoruの分け方とmarkitの分け方
+- Markitのindexは翌営業日に提供されるので，その日のCVAを計算したいときなどはできない．
+
+##### non-traded CDSのヘッジについて
+- non-traded average CDS curveはヘッジが難しい．（averageの意味は，似たようなsector, ratingを持つsingle name CDS
+の値を平均しているということ(?)）
+- 理論的には，averageされている元のsingle name CDSを用いてヘッジしなければいけない
+- けど，そんなのコストがかかるし，現実的ではない．
+- 先ほどと同じように，ヘッジしていて，illiquid nameがdefaultしたとしても，それがCDSのトリガーにはならない．
+
+### 4.6.3 Cross-section Maps
+#### mappingのさらなる方法の一つ
+#### proxy CDS curves
+- cross-section法に基づいて行われる.
+- ISDAのペーパーにmodelが書かれており,original workはChourdakis, McEwen, Kyriakos, Jeannin等．
+- あるカウンターパーティー(添え字:i)のプロキシ spread(illiquid CDS spread)は,n個のファクターで与えられるとするモデルである．
+  $$
+  S_{\text{proxy}}^{i} = \Pi_{j = 1}^{n} m_{j}
+  $$
+- ISDAは5個のファクターを使っていて，あまり理由はないらしい．
+  - Global factor
+  - Industry sector
+  - Regional factor
+  - Rating factor
+  - Seniority factor
+- 真ん中3つはバーゼルIIIに書かれていて，CVA資本計算の際に，これらに基づいた分類をしたカーブを使っていないと，IMMは承認しないよといっている．
+
+##### ウェイトの付け方
+- 様々な方針があるが，S&P styleだと，19個のratingがあって，$m_{\text{rating}}$ にそれぞれ19の異なる値を割り振る．
+
+#### キャリブレーション方法
+- 線形回帰モデルで行う
+- 誤差が最小になるようにそれぞれのパラメータを決める．
+- 重みは，proxy spreadsとactural spreadsを最小にするように選ばれているはずである．
+
+##### 利点
+- 使用できるデータの量が他の方法に比べて多い．自由度が高い．
+
+
+#### キャリブレーションの別の方法
+- regional factorsについてはsingle nameではなく，ソブリンCDS spreadを用いる方法
+##### 利点
+- ソブリンCDSは比較的流動性があるので，ソブリンCDSと少なからず連動しているproxy curveを用いてriskの一部をヘッジすることができる．
+##### 欠点
+- ソブリンCDSを購入しなければいけなけれども，ソブリンCDS spreadが大きくなると高いプレミアムを払わなければいけなくなる．ヘッジにリスクが伴っている
+##### 以下???
+- CVAデスクはどのカーブが使われてCVAが計算されているのかを知らずに，ヘッジのためにソブリンCDSを購入する恐れがある
+- regional factors
